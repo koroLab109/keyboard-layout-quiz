@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="JIS・US・UKキーボードの配列を覚えているか試せるクイズゲーム">
+<title>キーボード配列クイズ ver.6.3</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#202938;background:#f3f5f8}
+*{box-sizing:border-box}body{margin:0;padding:20px}
+main{max-width:1500px;margin:auto}
+h1{font-size:clamp(23px,4vw,34px);margin:0 0 8px}
+h2{font-size:18px;margin:0 0 12px}
+p{line-height:1.6}.muted{color:#667085;font-size:13px}
+.panel{background:white;border:1px solid #dce1e8;border-radius:14px;padding:16px;margin:14px 0;box-shadow:0 2px 8px #1720330a}
+.center{text-align:center}.hero{padding:28px 16px}
+label{display:block;font-weight:650;font-size:14px;margin:12px 0 6px}
+select,button{font:inherit}
+select{width:100%;padding:11px;border:1px solid #cbd2dc;border-radius:8px;background:white}
+button{cursor:pointer}
+.btn{border:0;border-radius:9px;padding:11px 16px;font-weight:700}
+.primary{background:#2459d3;color:white}.secondary{background:#eef1f6;color:#263246;border:1px solid #d5dbe5}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.settings{max-width:520px;margin:auto}
+.gamehead{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.timer{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(120px,180px));justify-content:end;gap:9px;margin:12px 0}
+.stat{background:#f1f4f9;border-radius:9px;text-align:center;padding:9px;font-size:12px;color:#667085}
+.stat strong{display:block;color:#202938;font-size:20px;margin-top:3px}
+.workspace{display:block;max-width:1375px;margin:0 auto;align-items:stretch}.workleft{min-width:0;width:100%;max-width:1375px;margin:0 auto}.sidepanel{display:none;min-width:0;min-height:100%;align-items:center;justify-content:center}.sidepanel .result-summary{width:100%;max-width:360px}.workspace.graded{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,320px);gap:18px;max-width:1500px}.workspace.graded .workleft{margin:0}.workspace.graded .sidepanel{display:flex}.board-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}.board-head p{margin:0}.result-summary{background:#f1f4f9;border-radius:9px;padding:14px;min-width:0;text-align:left}.result-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px 8px;font-size:12px;color:#667085}.result-stats span{display:block}.result-stats strong{display:block;color:#202938;font-size:20px;margin:3px 0 0}.grade-message{display:block;font-size:14px;margin-top:12px;line-height:1.5}.arrows{padding:2px 8px;gap:4px}
+.board-wrap{display:flex;gap:8px;align-items:stretch;width:100%;overflow:visible}
+.mainboard{flex:1;min-width:0}
+.keyrow{display:flex;gap:3px;margin-bottom:4px;width:100%}
+.key{flex:var(--w,1) 1 0;min-width:0;height:clamp(34px,5.2vw,50px);border:1px solid #cbd2dc;border-radius:5px;background:#f8fafc;color:#202938;display:flex;align-items:center;justify-content:center;text-align:center;padding:2px;font-size:clamp(9px,1.25vw,14px);font-weight:650;line-height:1.15;overflow-wrap:anywhere;touch-action:none;user-select:none}
+.key.multiline{white-space:pre-line;word-break:keep-all;font-size:clamp(8px,1.05vw,12px)}
+.key.small{height:27px;font-size:clamp(11px,1.1vw,13px)}
+.key.filled{background:#e8efff;border-color:#7396ed}
+.key.punctuation{font-size:clamp(12px,1.55vw,17px);font-weight:800}
+.key[data-slot="backspace"]{white-space:nowrap;overflow-wrap:normal;word-break:keep-all;font-size:clamp(9px,1.05vw,12px)}
+.tile.long-label{white-space:nowrap;overflow-wrap:normal;word-break:keep-all;font-size:13px}
+.key.correct{background:#d1fae5;color:#065f46;border:2px solid #059669}
+.key.wrong{background:#fee2e2;color:#991b1b;border:2px solid #dc2626}
+.key.answer{background:#dbeafe;color:#1e40af;border:2px solid #2563eb}
+.pool{display:flex;flex-wrap:wrap;gap:7px;padding:6px;max-height:280px;overflow:auto;scrollbar-gutter:stable}
+.tile{padding:8px 10px;min-height:38px;border:1px solid #cbd2dc;background:white;border-radius:7px;font-size:14px;font-weight:700;line-height:1.2;touch-action:none;user-select:none;white-space:pre-line;flex:0 0 auto}.tile.multiline{font-size:12px;word-break:keep-all}
+.tile.selected{outline:3px solid #2459d3}
+.tile.punctuation{font-size:16px;font-weight:800}
+.numwrap{width:19%;min-width:0;flex-shrink:0}
+.numgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(5,minmax(0,1fr));gap:3px;height:100%}
+.numgrid .key{height:100%;min-height:0}
+.numgrid [data-slot=numadd]{grid-column:4;grid-row:2/span 2}
+.numgrid [data-slot=numenter]{grid-column:4;grid-row:4/span 2}
+.numgrid [data-slot=num0]{grid-column:1/span 2;grid-row:5}
+.numgrid [data-slot=numdot]{grid-column:3;grid-row:5}
+.bottomrow{display:flex;gap:3px;width:100%;overflow:visible;padding:2px 3px}
+.bottomrow .key{height:42px;font-size:clamp(9px,1.15vw,13px);line-height:1.1}
+.arrows{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,25px);gap:3px;flex:1;min-width:0;height:53px;padding:2px 3px;align-content:center}
+.arrows .key{height:25px;min-height:25px;min-width:0;font-size:clamp(13px,1.35vw,16px);font-weight:800;padding:0 7px;line-height:1;overflow:hidden}
+.arrows [data-slot=arrowUp]{grid-column:2;grid-row:1}
+.arrows [data-slot=arrowLeft]{grid-column:1;grid-row:2}
+.arrows [data-slot=arrowDown]{grid-column:2;grid-row:2}
+.arrows [data-slot=arrowRight]{grid-column:3;grid-row:2}
+.actions{display:flex;gap:8px}.actions>*{flex:1}
+.resultline{display:flex;justify-content:space-between;gap:8px;padding:7px 2px;border-bottom:1px solid #e5e7eb;font-size:13px}
+.hidden{display:none!important}
+.ghost{position:fixed;z-index:9999;pointer-events:none;background:#2459d3;color:white;padding:9px 12px;border-radius:7px;font-weight:700}
+@media(max-width:1250px){.workspace.graded{grid-template-columns:minmax(0,1fr) 260px;gap:12px}.workspace.graded .workleft{max-width:none}}
+@media(max-width:700px){.workspace.graded{grid-template-columns:minmax(0,1fr)}.workspace.graded .sidepanel{order:3;min-height:0}.workspace.graded .sidepanel .result-summary{max-width:none}}
+@media(max-width:620px){body{padding:10px}.panel{padding:11px}.board-wrap{gap:4px}.numwrap{width:20%}.key{height:36px;font-size:10px}.key.multiline{font-size:9px}.key.small{font-size:10px}.bottomrow .key{height:36px;font-size:9px}.arrows{height:49px;grid-template-rows:repeat(2,23px);padding:2px 7px;gap:4px}.arrows .key{height:23px;min-height:23px;font-size:15px;padding:0 6px}.stats{gap:5px;grid-template-columns:repeat(2,minmax(0,1fr));width:72%;margin-left:auto}.pool{gap:6px;padding:7px}.tile{font-size:13px}.board-head{align-items:flex-start;flex-wrap:wrap}.board-tools{margin-left:auto;flex-wrap:wrap}.result-summary{min-width:0}}
+</style>
+</head>
+<body>
+<main>
+<section id="setup">
+ <div class="panel hero center">
+  <div style="font-size:38px">⌨️</div>
+  <h1>キーボード配列クイズ</h1>
+  <p class="muted">キーボードのキー配置をどこまで覚えているか挑戦しよう！</p>
+ </div>
+ <div class="panel settings">
+  <h2>ゲーム設定</h2>
+  <label for="os">OS</label>
+  <select id="os"><option value="win">Windows</option><option value="mac">MacBook</option></select>
+  <div id="layoutBox" class="hidden">
+   <label for="layout">キーボード配列</label>
+   <select id="layout"><option value="jis">JIS日本語配列</option><option value="us">US英語配列</option><option value="uk">UK英語配列</option></select>
+  </div>
+  <label for="numpad">テンキー</label>
+  <select id="numpad"><option value="yes">テンキーあり</option><option value="no">テンキーなし</option></select>
+  <button id="start" class="btn primary" style="width:100%;margin-top:18px">ゲームスタート</button>
+ </div>
+ <div class="panel">
+  <h2>遊び方</h2>
+  <ul class="muted" style="line-height:1.9;padding-left:22px">
+   <li>下のキー一覧から、上のキーボードへキーを配置します。</li>
+   <li>ドラッグ＆ドロップ、またはキーを選択して配置先をクリックできます。</li>
+   <li>配置済みのキーも移動・交換できます。</li>
+   <li>「解答する・採点する」を押すと得点とタイムが表示されます。</li>
+   <li>採点後に解答例を表示できます。</li>
+  </ul>
+ </div>
+</section>
+
+<section id="game" class="hidden">
+ <div class="gamehead">
+  <div><strong>キーボード配列クイズ</strong><div id="config" class="muted"></div></div>
+  <div class="center"><div class="muted">経過時間</div><div id="timer" class="timer">00:00</div></div>
+ </div>
+ <div class="stats">
+  <div class="stat">配置済み<strong id="placed">0</strong></div>
+  <div class="stat">残り<strong id="remaining">0</strong></div>
+ </div>
+ <div id="workspace" class="workspace">
+  <div class="workleft">
+   <div class="panel">
+    <div class="board-head"><p class="muted">正しい位置にキーを配置してください。</p></div>
+    <div class="board-wrap">
+     <div class="mainboard" id="mainBoard">
+      <div id="fnrow"></div><div id="row1"></div><div id="row2"></div><div id="row3"></div><div id="row4"></div><div id="bottom"></div>
+     </div>
+     <div class="numwrap" id="numWrap"><div class="numgrid" id="num"></div></div>
+    </div>
+   </div>
+   <div class="panel">
+    <div id="pool" class="pool"></div>
+    <div class="actions" style="margin-top:12px">
+     <button id="clear" class="btn secondary">選択解除</button>
+     <button id="returnAll" class="btn secondary">全キーを戻す</button>
+    </div>
+   </div>
+  </div>
+  <aside class="sidepanel">
+   <div id="result" class="panel result-summary hidden">
+    <h2>採点結果</h2>
+    <div class="result-stats"><span>正解<strong id="correct">0</strong></span><span>正答率<strong id="accuracy">0%</strong></span><span>得点<strong id="score">0</strong></span><span>タイム<strong id="finalTime">00:00</strong></span></div>
+    <strong id="grade" class="grade-message"></strong>
+    <button id="toggleAnswer" class="btn secondary hidden" type="button" style="width:100%;margin-top:14px">解答例を表示する</button>
+    <button id="retry" class="btn secondary hidden" style="width:100%;margin-top:8px">もう一度挑戦（Escキー）</button>
+    <button id="back" class="btn secondary hidden" style="width:100%;margin-top:8px">設定画面に戻る</button>
+   </div>
+  </aside>
+ </div>
+ <button id="submit" class="btn primary" style="width:100%">解答する・採点する</button>
+
+</section>
+</main>
+<div id="ghost" class="ghost hidden"></div>
+<script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id);
+const K=(id,label,w=1)=>({id,label,w});
+const letters=s=>s.split(' ').map(x=>K(x,x));
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const fmt=s=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+const twins={ctrlL:'ctrl',ctrlR:'ctrl',shiftL:'shift',shiftR:'shift',altL:'alt',altR:'alt',optionL:'option',optionR:'option',commandL:'command',commandR:'command'};
+const duplicateKeys={
+ enter:['enter','jenter','return','ukenter','numenter'],
+ num0:['d0','j0','u0','uk0','num0'],
+ num1:['d1','j1','u1','uk1','num1'],
+ num2:['d2','j2','u2','uk2','num2'],
+ num3:['d3','j3','u3','uk3','num3'],
+ num4:['d4','j4','u4','uk4','num4'],
+ num5:['d5','j5','u5','uk5','num5'],
+ num6:['d6','j6','u6','uk6','num6'],
+ num7:['d7','j7','u7','uk7','num7'],
+ num8:['d8','j8','u8','uk8','num8'],
+ num9:['d9','j9','u9','uk9','num9'],
+ numsub:['numsub','jminus','wminus','uminus','ukminus'],
+ numdiv:['numdiv','jslash','wslash','uslash','ukslash'],
+ numdot:['numdot','jperiod','wperiod','udot','ukdot']
+};
+const duplicateFamily=Object.fromEntries(Object.entries(duplicateKeys).flatMap(([group,ids])=>ids.map(id=>[id,group])));
+const family=id=>twins[id]||duplicateFamily[id]||id;
+const isCorrect=(a,b)=>!!b&&family(a)===family(b);
+const fn=[K('esc','Esc',1.4),...Array.from({length:12},(_,i)=>K('f'+(i+1),'F'+(i+1)))];
+const jis={
+r1:[K('j1','1'),K('j2','2 / !'),K('j3','3 / #'),K('j4','4 / $'),K('j5','5 / %'),K('j6','6 / &'),K('j7',"7 / '"),K('j8','8 / ('),K('j9','9 / )'),K('j0','0'),K('jminus','-'),K('jcaret','^'),K('jyen','¥'),K('delete','Delete',1.5)],
+r2:[K('tab','Tab',1.5),...letters('Q W E R T Y U I O P'),K('jat','@'),K('jbracket','['),K('jenter','Enter',1.7)],
+r3:[K('ctrlL','Control',1.3),...letters('A S D F G H J K L'),K('jsemi',';'),K('jcolon',':'),K('jrbracket',']')],
+r4:[K('shiftL','Shift',1.7),...letters('Z X C V B N M'),K('jcomma',','),K('jperiod','.'),K('jslash','/'),K('jro','＿'),K('shiftR','Shift',1.7)],
+bottom:[K('caps','Caps'),K('optionL','Option'),K('commandL','Command'),K('eisu','英数'),K('space','Space',3.7),K('kana','かな'),K('commandR','Command'),K('fnkey','Fn')]
+};
+const us={
+r1:[K('grave','~ / `'),K('u1','! / 1'),K('u2','@ / 2'),K('u3','# / 3'),K('u4','$ / 4'),K('u5','% / 5'),K('u6','^ / 6'),K('u7','& / 7'),K('u8','* / 8'),K('u9','( / 9'),K('u0',') / 0'),K('uminus','_ / -'),K('uequal','+ / ='),K('delete','Delete',1.5)],
+r2:[K('tab','Tab',1.5),...letters('Q W E R T Y U I O P'),K('ulb','{ / ['),K('urb','} / ]'),K('ubackslash','| / \\')],
+r3:[K('caps','Caps Lock',1.7),...letters('A S D F G H J K L'),K('usemi',': / ;'),K('uquote','" / \''),K('return','Return',1.8)],
+r4:[K('shiftL','Shift',2),...letters('Z X C V B N M'),K('ucomma','< / ,'),K('udot','> / .'),K('uslash','? / /'),K('shiftR','Shift',2)],
+bottom:[K('fnkey','Fn'),K('ctrlL','Control'),K('optionL','Option'),K('commandL','Command'),K('space','Space',4.4),K('commandR','Command'),K('optionR','Option')]
+};
+const uk={
+r1:[K('uksection','± / §'),K('uk1','! / 1'),K('uk2','@ / 2'),K('uk3','£ / 3'),K('uk4','$ / 4'),K('uk5','% / 5'),K('uk6','^ / 6'),K('uk7','& / 7'),K('uk8','* / 8'),K('uk9','( / 9'),K('uk0',') / 0'),K('ukminus','_ / -'),K('ukequal','+ / ='),K('delete','Delete',1.5)],
+r2:[K('tab','Tab',1.4),...letters('Q W E R T Y U I O P'),K('uklb','{ / ['),K('ukrb','} / ]'),K('ukenter','Return',1.4)],
+r3:[K('caps','Caps Lock',1.7),...letters('A S D F G H J K L'),K('uksemi',': / ;'),K('ukquote','" / \''),K('ukhash','| / \\')],
+r4:[K('shiftL','Shift',1.3),K('ukextra','~ / `'),...letters('Z X C V B N M'),K('ukcomma','< / ,'),K('ukdot','> / .'),K('ukslash','? / /'),K('shiftR','Shift',1.7)],
+bottom:[K('fnkey','Fn'),K('ctrlL','Control'),K('optionL','Option'),K('commandL','Command'),K('space','Space',4.4),K('commandR','Command'),K('optionR','Option')]
+};
+const win={
+r1:[K('zen','半角/\n全角'),...Array.from({length:9},(_,i)=>K('d'+(i+1),String(i+1))),K('d0','0'),K('wminus','-'),K('wcaret','^'),K('wyen','¥'),K('backspace','Backspace',1.6)],
+r2:[K('tab','Tab',1.5),...letters('Q W E R T Y U I O P'),K('wat','@'),K('wbracket','[')],
+r3:[K('caps','Caps',1.7),...letters('A S D F G H J K L'),K('wsemi',';'),K('wcolon',':'),K('wrbracket',']'),K('enter','Enter',1.7)],
+r4:[K('shiftL','Shift',1.8),...letters('Z X C V B N M'),K('wcomma',','),K('wperiod','.'),K('wslash','/'),K('wbackslash','＼'),K('shiftR','Shift',1.8)],
+bottom:[K('ctrlL','Ctrl'),K('win','Win'),K('altL','Alt'),K('muhenkan','無変換'),K('space','Space',4),K('henkan','変換'),K('kana','カタカナ/\nひらがな'),K('altR','Alt'),K('ctrlR','Ctrl')]
+};
+const arrows=[K('arrowUp','↑'),K('arrowLeft','←'),K('arrowDown','↓'),K('arrowRight','→')];
+const num=[K('numlock','Num Lock'),K('numdiv','/'),K('nummul','*'),K('numsub','-'),K('num7','7'),K('num8','8'),K('num9','9'),K('numadd','+'),K('num4','4'),K('num5','5'),K('num6','6'),K('num1','1'),K('num2','2'),K('num3','3'),K('numenter','Enter'),K('num0','0',2),K('numdot','.')];
+let slots=[],keys=[],placed={},order=[],selected=null,finished=false,answerVisible=false,started=0,clock=null,drag=null,suppress=false,hasNum=false;
+const punctuationIds=new Set(['jminus','jcaret','jsemi','jcolon','jcomma','jperiod','jslash','wminus','wcaret','wsemi','wcolon','wcomma','wperiod','wslash','wbackslash','uminus','uequal','usemi','ucomma','udot','uslash','ukminus','ukequal','uksemi','ukcomma','ukdot','ukslash','ukextra','grave','uksection','jyen','wyen']);
+function makeKey(k,small=false){
+ const b=document.createElement('button');b.type='button';b.className='key'+(small?' small':'')+(['zen','kana'].includes(k.id)?' multiline':'')+(punctuationIds.has(k.id)?' punctuation':'');b.dataset.slot=k.id;b.style.setProperty('--w',k.w);b.textContent=k.label;
+ b.addEventListener('click',()=>{if(suppress){suppress=false;return}slotClick(k.id)});
+ b.addEventListener('pointerdown',e=>{if(!finished&&placed[k.id])beginDrag(e,placed[k.id],k.id)});
+ return b;
+}
+function renderRow(id,data,small=false){const r=document.createElement('div');r.className='keyrow';data.forEach(k=>r.append(makeKey(k,small)));$(id).replaceChildren(r)}
+function renderBottom(data){
+ const r=document.createElement('div');r.className='bottomrow';data.forEach(k=>r.append(makeKey(k)));
+ const a=document.createElement('div');a.className='arrows';arrows.forEach(k=>a.append(makeKey(k)));r.append(a);$('bottom').replaceChildren(r);
+}
+function syncHeight(){if(!hasNum)return;const h=$('mainBoard').getBoundingClientRect().height;if(h>0)$('num').style.height=h+'px'}
+function renderBoard(data,np){
+ renderRow('fnrow',fn,true);renderRow('row1',data.r1);renderRow('row2',data.r2);renderRow('row3',data.r3);renderRow('row4',data.r4);renderBottom(data.bottom);
+ hasNum=np;$('numWrap').style.display=np?'block':'none';$('num').replaceChildren();if(np)num.forEach(k=>$('num').append(makeKey(k)));
+ requestAnimationFrame(syncHeight);
+}
+function renderPool(){
+ const p=$('pool');p.replaceChildren();const used=new Set(Object.values(placed));
+ order.filter(id=>!used.has(id)).forEach(id=>{
+  const k=keys.find(x=>x.id===id),b=document.createElement('button');b.type='button';b.className='tile'+(['zen','kana'].includes(k.id)?' multiline':'')+(punctuationIds.has(k.id)?' punctuation':'')+(k.id==='backspace'?' long-label':'');b.textContent=k.label;
+  if(selected===id)b.classList.add('selected');
+  b.addEventListener('click',()=>{if(suppress){suppress=false;return}if(finished)return;selected=selected===id?null:id;renderPool()});
+  b.addEventListener('pointerdown',e=>{if(!finished)beginDrag(e,id,null)});p.append(b);
+ });
+}
+function beginDrag(e,id,source){if(e.button!==undefined&&e.button!==0)return;drag={id,source,x:e.clientX,y:e.clientY,pointer:e.pointerId,moved:false}}
+function moveKey(id,dest,source){
+ if(finished||!id||!keys.some(k=>k.id===id))return;
+ const src=source||Object.keys(placed).find(s=>placed[s]===id)||null;if(src===dest)return;
+ const old=placed[dest];if(src)delete placed[src];if(old&&src)placed[src]=old;placed[dest]=id;selected=null;renderPool();updateBoard();
+}
+function slotClick(id){if(finished)return;if(selected){moveKey(selected,id,null);return}if(placed[id]){delete placed[id];renderPool();updateBoard()}}
+function updateBoard(){
+ $('placed').textContent=Object.keys(placed).length+' / '+slots.length;$('remaining').textContent=slots.length-Object.keys(placed).length;
+ document.querySelectorAll('#game [data-slot]').forEach(el=>{
+  const id=el.dataset.slot,val=placed[id],target=keys.find(k=>k.id===id),actual=keys.find(k=>k.id===val);
+  el.classList.remove('filled','correct','wrong','answer');
+  if(!finished){el.textContent=actual?actual.label:'';if(val)el.classList.add('filled')}
+  else if(isCorrect(id,val)){el.textContent=actual.label;el.classList.add('correct')}
+  else if(answerVisible){el.textContent=target.label;el.classList.add('answer')}
+  else{el.textContent=actual?actual.label:'';if(val)el.classList.add('wrong')}
+ });
+ requestAnimationFrame(syncHeight);
+}
+function start(){
+ const os=$('os').value,layout=os==='win'?'jis':$('layout').value,np=$('numpad').value==='yes';
+ const base=os==='win'?win:layout==='jis'?jis:layout==='us'?us:uk;
+ const macDigits={j1:'1',j2:'2',j3:'3',j4:'4',j5:'5',j6:'6',j7:'7',j8:'8',j9:'9',j0:'0',u1:'1',u2:'2',u3:'3',u4:'4',u5:'5',u6:'6',u7:'7',u8:'8',u9:'9',u0:'0',uk1:'1',uk2:'2',uk3:'3',uk4:'4',uk5:'5',uk6:'6',uk7:'7',uk8:'8',uk9:'9',uk0:'0'};
+ const data=os==='mac'?{...base,r1:base.r1.map(k=>macDigits[k.id]?{...k,label:macDigits[k.id]}:k)}:base;
+ slots=[...fn,...data.r1,...data.r2,...data.r3,...data.r4,...data.bottom,...arrows,...(np?num:[])];keys=slots.map(k=>({...k}));
+ placed={};selected=null;finished=false;answerVisible=false;order=shuffle(keys.map(k=>k.id));
+ $('setup').classList.add('hidden');$('game').classList.remove('hidden');$('workspace').classList.remove('graded');$('result').classList.add('hidden');$('submit').disabled=false;
+ $('toggleAnswer').textContent='解答例を表示する';$('toggleAnswer').classList.add('hidden');$('retry').classList.add('hidden');$('back').classList.add('hidden');
+ const names={jis:'JIS日本語配列',us:'US英語配列',uk:'UK英語配列'};
+ $('config').textContent=(os==='win'?'Windows / JIS日本語配列':'MacBook / '+names[layout])+' / '+(np?'テンキーあり':'テンキーなし');
+ renderBoard(data,np);renderPool();updateBoard();started=Date.now();$('timer').textContent='00:00';clearInterval(clock);
+ clock=setInterval(()=>$('timer').textContent=fmt(Math.floor((Date.now()-started)/1000)),200);
+}
+function grade(){
+ if(finished)return;const time=Math.floor((Date.now()-started)/1000);clearInterval(clock);finished=true;answerVisible=false;$('timer').textContent=fmt(time);
+ let n=0;
+ slots.forEach(k=>{if(isCorrect(k.id,placed[k.id]))n++});
+ const rate=Math.round(n/slots.length*100);$('correct').textContent=n+' / '+slots.length;$('accuracy').textContent=rate+'%';$('score').textContent=n+' 点';$('finalTime').textContent=fmt(time);
+ $('grade').textContent=rate===100?'🎉 完璧！全問正解！':rate>=80?'素晴らしい！':rate>=60?'いい調子！':'もう一度挑戦してみよう！';
+ $('workspace').classList.add('graded');
+ $('toggleAnswer').textContent='解答例を表示する';$('toggleAnswer').classList.remove('hidden');$('result').classList.remove('hidden');$('retry').classList.remove('hidden');$('back').classList.remove('hidden');$('submit').disabled=true;updateBoard();
+}
+function toggleAnswer(){if(!finished)return;answerVisible=!answerVisible;$('toggleAnswer').textContent=answerVisible?'解答例を隠す':'解答例を表示する';updateBoard()}
+function pointerMove(e){
+ if(!drag||e.pointerId!==drag.pointer)return;if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>5)drag.moved=true;
+ if(drag.moved){const g=$('ghost'),k=keys.find(x=>x.id===drag.id);g.textContent=k.label;g.classList.remove('hidden');g.style.left=(e.clientX+12)+'px';g.style.top=(e.clientY+12)+'px'}
+}
+function pointerUp(e){
+ if(!drag||e.pointerId!==drag.pointer)return;const d=drag;drag=null;$('ghost').classList.add('hidden');
+ if(d.moved){
+  const target=document.elementFromPoint(e.clientX,e.clientY);
+  const slot=target&&target.closest('#game [data-slot]');
+  const pool=target&&target.closest('#pool');
+  if(slot)moveKey(d.id,slot.dataset.slot,d.source);
+  else if(pool&&d.source&&!finished){delete placed[d.source];selected=null;renderPool();updateBoard()}
+  suppress=true;setTimeout(()=>suppress=false,180)
+ }
+ else if(!d.source){selected=selected===d.id?null:d.id;renderPool()}else{selected=null;renderPool()}
+}
+$('os').addEventListener('change',()=>$('layoutBox').classList.toggle('hidden',$('os').value!=='mac'));
+$('start').addEventListener('click',start);$('submit').addEventListener('click',grade);$('toggleAnswer').addEventListener('click',toggleAnswer);
+$('clear').addEventListener('click',()=>{selected=null;renderPool()});
+$('returnAll').addEventListener('click',()=>{if(finished)return;placed={};selected=null;renderPool();updateBoard()});
+
+$('retry').addEventListener('click',start);
+$('back').addEventListener('click',()=>{clearInterval(clock);$('game').classList.add('hidden');$('setup').classList.remove('hidden')});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&finished){e.preventDefault();start()}});
+document.addEventListener('pointermove',pointerMove);document.addEventListener('pointerup',pointerUp);
+document.addEventListener('pointercancel',()=>{drag=null;$('ghost').classList.add('hidden')});
+window.addEventListener('resize',()=>requestAnimationFrame(syncHeight));
+if(typeof ResizeObserver!=='undefined')new ResizeObserver(()=>requestAnimationFrame(syncHeight)).observe($('mainBoard'));
+})();
+</script>
+</body>
+</html>
